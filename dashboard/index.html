@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>₿ Bot Futures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════ HEADER ══════════════════════ -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">₿</div>
+    <span class="logo-text">Bot<span>Futures</span></span>
+  </div>
+
+  <div class="header-divider"></div>
+
+  <div class="header-stats">
+    <div class="hstat">
+      <span class="hstat-label">Saldo</span>
+      <span class="hstat-value" id="hstat-balance">— USDC</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-label">P&amp;L Total</span>
+      <span class="hstat-value" id="hstat-pnl">+0.00 USDC</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-label">Win Rate</span>
+      <span class="hstat-value pos" id="hstat-wr">—</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-label">Trades</span>
+      <span class="hstat-value" id="hstat-trades">0</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-label">Posições</span>
+      <span class="hstat-value" id="hstat-positions">0</span>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <span class="fng-badge" id="fng-badge" title="Fear &amp; Greed Index (mercado cripto)">
+      <span id="fng-emoji">—</span><span id="fng-value">—</span>
+    </span>
+    <span class="mode-badge testnet" id="mode-badge">DEMO</span>
+    <div id="bot-status-pill" class="status-pill pill-stopped">
+      <span class="dot"></span>
+      <span id="bot-status-label">PARADO</span>
+    </div>
+    <button class="btn-logout" id="lock-btn" onclick="toggle2FA()" title="2FA" style="margin-right:6px;">🔓</button>
+    <button class="btn-logout" onclick="logout()" title="Terminar sessão">⏻</button>
+  </div>
+</header>
+
+<!-- ══════════════════════ MAIN ══════════════════════ -->
+<main>
+
+  <!-- ── SIDEBAR ESQUERDA — CONTROLES ── -->
+  <aside id="sidebar-left">
+
+    <!-- Estratégia -->
+    <div class="sb-block">
+      <span class="sb-label">Estratégia</span>
+      <div class="strat-dd" id="strat-dd">
+        <button type="button" class="strat-dd-trigger" onclick="toggleStrategyDD(event)">
+          <span id="strat-dd-current">Selecionar…</span>
+          <span class="strat-dd-caret">▾</span>
+        </button>
+        <div class="strat-dd-menu" id="strat-dd-menu" hidden>
+          <div class="strat-dd-list" id="strat-dd-list"></div>
+          <div class="strat-dd-card" id="strat-dd-card">
+            <div class="strat-card-empty">Passe o mouse numa estratégia para ver os detalhes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alavancagem -->
+    <div class="sb-block">
+      <span class="sb-label">Alavancagem</span>
+      <div class="leverage-display">
+        <span class="leverage-num" id="lev-num">3</span>
+        <span class="leverage-x">×</span>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="leverage-slider" min="1" max="20" value="3" step="1"
+               oninput="document.getElementById('lev-num').textContent=this.value"
+               onchange="setLeverage(this.value)" />
+      </div>
+      <div class="slider-labels">
+        <span>1×</span><span>5×</span><span>10×</span><span>15×</span><span>20×</span>
+      </div>
+    </div>
+
+    <!-- Modo de Operação -->
+    <div class="sb-block">
+      <span class="sb-label">Modo de Operação</span>
+      <div class="toggle-group">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label" id="mode-label">Modo Demo</div>
+            <div class="toggle-row-sub" id="mode-sub">Demo ativo — ordens na conta demo Binance</div>
+          </div>
+          <label class="switch" title="Ativar modo Live">
+            <input type="checkbox" id="live-toggle" onchange="handleModeToggle(this.checked)" />
+            <span class="switch-track"></span>
+          </label>
+        </div>
+        <div class="live-warning" id="live-warning">
+          ⚠ LIVE — ordens reais na Binance
+        </div>
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="sb-block">
+      <button id="bot-btn" class="btn btn-start" onclick="botCommand('start')">
+        ▶&nbsp; Iniciar Bot
+      </button>
+      <button id="scan-btn" class="btn btn-scan-manual" onclick="startScan()" title="Executa o scan agora sem abrir trades">
+        🔍&nbsp; Scan Manual
+      </button>
+    </div>
+
+    <!-- Mini condições -->
+    <div class="sb-block" id="mini-cond-block">
+      <div class="mini-cond-header">
+        <span class="sb-label" id="mini-cond-title">CONDIÇÕES</span>
+        <span class="mini-cond-score" id="mini-cond-score">—</span>
+      </div>
+      <div class="mini-cond-bar-wrap">
+        <div class="mini-cond-bar" id="mini-cond-bar"></div>
+      </div>
+      <ul class="mini-cond-list" id="mini-cond-list">
+        <li class="mini-cond-empty">Aguardando scan...</li>
+      </ul>
+    </div>
+
+    <!-- Criptos -->
+    <div class="sb-block" style="flex:1">
+      <span class="sb-label">Criptos</span>
+      <div class="symbol-grid" id="sym-grid">
+        <!-- preenchido pelo JS -->
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── ÁREA DO GRÁFICO ── -->
+  <section id="chart-area">
+    <div class="chart-toolbar">
+      <span class="chart-symbol" id="chart-sym">BTC/USDC</span>
+      <span class="chart-price" id="chart-price">—</span>
+
+      <div class="chart-legend">
+        <span style="color:#F7931A">— EMA20</span>
+        <span style="color:#5B8AF5">— EMA50</span>
+        <span style="color:#9C27B0">— EMA200</span>
+      </div>
+
+      <div class="tf-pills" id="tf-pills">
+        <button class="tf-pill" data-tf="5m"  onclick="setTf('5m',this)">5m</button>
+        <button class="tf-pill" data-tf="15m" onclick="setTf('15m',this)">15m</button>
+        <button class="tf-pill active" data-tf="1h"  onclick="setTf('1h',this)">1h</button>
+        <button class="tf-pill" data-tf="4h"  onclick="setTf('4h',this)">4h</button>
+        <button class="tf-pill" data-tf="1d"  onclick="setTf('1d',this)">1D</button>
+        <button class="tf-pill chart-reset-btn" onclick="resetChartView()" title="Resetar escala do gráfico">↺</button>
+      </div>
+    </div>
+    <div id="tv_chart"></div>
+  </section>
+
+  <!-- ── SIDEBAR DIREITA — CONDIÇÕES + POSIÇÕES + TRADES ── -->
+  <aside id="sidebar-right">
+
+    <!-- Sinal atual -->
+    <div class="section-header section-toggle" style="cursor:pointer" onclick="toggleSection('signal-wrap','chevron-signal')">
+      <span class="section-title">Sinal</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="cond-count" id="cond-count">—</span>
+        <span id="chevron-signal" class="section-chevron">▾</span>
+      </div>
+    </div>
+
+    <div id="signal-wrap">
+      <div class="signal-banner none" id="signal-banner">
+        <div>
+          <div class="signal-label">DIREÇÃO</div>
+          <div class="signal-value" id="signal-val">AGUARDANDO</div>
+        </div>
+        <div style="text-align:right">
+          <div class="signal-label">R:R</div>
+          <div class="rr-value" id="rr-val" style="color:var(--muted2)">—</div>
+        </div>
+      </div>
+
+      <div class="cond-list" id="cond-list">
+        <div style="padding:12px 0;color:var(--muted);font-size:11px;text-align:center">
+          Aguardando próximo scan...
+        </div>
+      </div>
+    </div>
+
+    <!-- Posições abertas -->
+    <div class="section-header section-toggle" style="margin-top:4px;cursor:pointer" onclick="toggleSection('positions-wrap','chevron-pos')">
+      <span class="section-title">Posições Abertas</span>
+      <span id="chevron-pos" class="section-chevron">▾</span>
+    </div>
+
+    <div id="positions-wrap">
+      <div class="pos-empty">Nenhuma posição aberta</div>
+    </div>
+
+    <!-- Histórico -->
+    <div class="section-header section-toggle" style="cursor:pointer" onclick="toggleSection('trades-wrap','chevron-hist')">
+      <span class="section-title">Histórico</span>
+      <span id="chevron-hist" class="section-chevron">▾</span>
+    </div>
+
+    <div id="trades-wrap" class="trades-wrap">
+      <table class="trades-tbl">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Par</th>
+            <th>Lado</th>
+            <th>Lev</th>
+            <th>R:R</th>
+            <th>P&amp;L</th>
+          </tr>
+        </thead>
+        <tbody id="trades-body">
+          <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:14px">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </aside>
+
+  <!-- ── LOG ── -->
+  <div id="log-bar">
+    <div class="log-header">
+      <span class="log-title">⬡ Log de Eventos</span>
+      <span style="font-size:10px;color:var(--muted);font-family:var(--mono)" id="log-count">0 eventos</span>
+    </div>
+    <div id="log-output"></div>
+  </div>
+
+</main>
+
+<script>
+/* ─────────────────────────────────────────────
+   CONFIGURAÇÃO
+───────────────────────────────────────────── */
+const SYMBOLS = [
+  "BTC/USDC:USDC","ETH/USDC:USDC","SOL/USDC:USDC","BNB/USDC:USDC",
+  "XRP/USDC:USDC","ADA/USDC:USDC","AVAX/USDC:USDC","DOGE/USDC:USDC",
+  "SUI/USDC:USDC","LINK/USDC:USDC"
+];
+
+let currentSymbol   = SYMBOLS[0];
+let currentStrategy = "bear_v13";
+let currentTf       = "1h";
+let currentMode     = "testnet";
+let ws              = null;
+let logCount        = 0;
+const conditionsCache = {};
+
+// ── lightweight-charts state ──
+let chart         = null;
+let candleSeries  = null;
+let volumeSeries  = null;
+let ema20Series   = null;
+let ema50Series   = null;
+let ema200Series  = null;
+let positionLines = [];   // price lines activas (Entrada / SL / TP)
+let _lastPositions = [];  // cache para redesenhar ao mudar de símbolo
+let _chartLoading  = false;
+let _tradesCache   = [];  // cache de trades para marcadores no gráfico
+
+// ── Arraste das linhas de SL/TP ──
+let _slLine  = null;      // referência à price line do stop loss
+let _tpLine  = null;      // referência à price line do take profit
+let _chartPos = null;     // posição desenhada no gráfico actual
+let _drag    = null;      // { kind:'sl'|'tp', line, price } enquanto arrasta
+
+/* ─────────────────────────────────────────────
+   INICIALIZA PARES
+───────────────────────────────────────────── */
+const symGrid = document.getElementById("sym-grid");
+SYMBOLS.forEach((s, i) => {
+  const label = s.replace("/USDC:USDC","");
+  const el = document.createElement("button");
+  el.className = "sym-pill" + (i === 0 ? " active" : "");
+  el.dataset.symbol = s;
+  el.textContent = label;
+  el.onclick = () => selectSymbol(s, el);
+  symGrid.appendChild(el);
+});
+
+/* ─────────────────────────────────────────────
+   AUDIO ALERTS
+───────────────────────────────────────────── */
+const _audioCtx = (() => {
+  try { return new (window.AudioContext || window.webkitAudioContext)(); }
+  catch { return null; }
+})();
+
+// Desbloqueia o contexto no primeiro gesto do utilizador (requisito dos browsers)
+document.addEventListener("click", () => {
+  if (_audioCtx && _audioCtx.state === "suspended") _audioCtx.resume();
+}, { once: true });
+
+function _beep(freq, duration, volume = 0.12) {
+  if (!_audioCtx || _audioCtx.state !== "running") return;
+  const osc  = _audioCtx.createOscillator();
+  const gain = _audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(_audioCtx.destination);
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(freq, _audioCtx.currentTime);
+  gain.gain.setValueAtTime(volume, _audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + duration);
+  osc.start(_audioCtx.currentTime);
+  osc.stop(_audioCtx.currentTime + duration);
+}
+
+function playTradeSound(type) {
+  if (type === "open") {
+    // Dois tons ascendentes — ordem aberta
+    _beep(523, 0.12);                       // C5
+    setTimeout(() => _beep(659, 0.14), 110); // E5
+  } else {
+    // Dois tons descendentes — ordem fechada
+    _beep(440, 0.12);                       // A4
+    setTimeout(() => _beep(330, 0.14), 110); // E4
+  }
+}
+
+/* ─────────────────────────────────────────────
+   WEBSOCKET
+───────────────────────────────────────────── */
+function connectWS() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+
+  ws.onopen = () => log("Conectado ao servidor", "ok");
+
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    handleWS(msg);
+  };
+
+  ws.onclose = () => {
+    log("Conexão perdida — reconectando...", "warn");
+    setTimeout(connectWS, 5000);
+  };
+
+  setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN)
+      ws.send(JSON.stringify({type:"ping"}));
+  }, 30000);
+}
+
+function handleWS(msg) {
+  if (msg.type === "connected") {
+    setBotStatus(msg.running);
+    applyConfig(msg.config);
+    applyStats(msg.stats);
+  } else if (msg.type === "bot_started") {
+    setBotStatus(true);
+    log(`Bot iniciado — ${msg.strategy}`, "ok");
+  } else if (msg.type === "log") {
+    if (msg.message && msg.message.startsWith("⛔")) playTradeSound("close");
+    log(msg.message, msg.level || "info");
+  } else if (msg.type === "bot_stopped") {
+    setBotStatus(false);
+    log("Bot parado", "warn");
+  } else if (msg.type === "mode_changed") {
+    applyMode(msg.mode);
+    if (msg.balance) applyBalance(msg.balance);
+    log(`Modo → ${msg.mode.toUpperCase()}`, msg.mode === "live" ? "warn" : "ok");
+  } else if (msg.type === "leverage_changed") {
+    document.getElementById("lev-num").textContent = msg.leverage;
+    document.getElementById("leverage-slider").value = msg.leverage;
+  } else if (msg.type === "strategy_changed") {
+    syncStrategyUI(msg.strategy);
+  } else if (msg.type === "signal_update") {
+    conditionsCache[msg.symbol] = msg;
+    onScanSignal();
+    if (msg.symbol === currentSymbol) {
+      renderConditions(msg);
+      renderMiniConditions(msg);
+    }
+  } else if (msg.type === "trade_opened") {
+    playTradeSound("open");
+    log(`✔ Trade: ${msg.symbol} ${msg.side} @${parseFloat(msg.entry).toFixed(4)} ${msg.leverage}x`, "ok");
+    fetchTrades();
+    fetchStatus();
+  } else if (msg.type === "position_update") {
+    if (msg.event === "position_closed") playTradeSound("close");
+    log(msg.message || `Posição: ${msg.symbol}`, "info");
+    fetchStatus();
+  } else if (msg.type === "positions_tick") {
+    renderPositions(msg.positions);
+    updatePositionLines(msg.positions);
+    document.getElementById("hstat-positions").textContent = msg.positions.length;
+  } else if (msg.type === "stats_update") {
+    applyStats(msg.stats);
+    if (msg.balance) applyBalance(msg.balance);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   API
+───────────────────────────────────────────── */
+async function api(path, method="GET", body=null) {
+  const opts = { method, headers:{"Content-Type":"application/json"} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  // Sessão expirada ou inválida — redireciona para login
+  if (r.status === 401) { window.location.replace("/login"); return; }
+  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.detail||`HTTP ${r.status}`); }
+  return r.json();
+}
+
+async function logout() {
+  await fetch("/auth/logout", { method: "POST" }).catch(() => {});
+  window.location.replace("/login");
+}
+
+// ── Segurança da conta ──────────────────────────────────────────────────────
+// Usa fetch direto (não o api()) porque um 401 aqui = senha/código errado do
+// PRÓPRIO utilizador, não sessão expirada — não deve deslogar.
+async function secPost(path, body) {
+  const r = await fetch(path, {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: body ? JSON.stringify(body) : null,
+  });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, data };
+}
+function secMsg(text, isErr) {
+  const el = document.getElementById("sec-msg");
+  el.textContent = text || "";
+  el.style.color = isErr ? "var(--red)" : "var(--green)";
+}
+
+// Estado do cadeado no header: 🔒 fechado = 2FA ativo, 🔓 aberto = desligado.
+let _twofa = false;
+function setLockIcon(enabled) {
+  _twofa = enabled;
+  const b = document.getElementById("lock-btn");
+  b.textContent = enabled ? "🔒" : "🔓";
+  b.title = enabled ? "2FA ativo — clicar para desativar"
+                    : "2FA desligado — clicar para ativar";
+}
+async function initLock() {
+  const r = await fetch("/api/auth/status").then(x=>x.json()).catch(()=>null);
+  if (r) setLockIcon(!!r.totp_enabled);
+}
+
+function _secReset() {
+  secMsg("");
+  ["sec-code","sec-dis-code"].forEach(id => document.getElementById(id).value="");
+  document.getElementById("sec-enroll").style.display   = "none";
+  document.getElementById("sec-recovery").style.display = "none";
+  document.getElementById("sec-disable").style.display  = "none";
+}
+function closeSecurity() {
+  document.getElementById("sec-overlay").classList.remove("visible");
+  initLock();   // ressincroniza o ícone com o estado real ao fechar
+}
+
+// Clique no cadeado: confirma o estado real e abre o fluxo certo.
+async function toggle2FA() {
+  const r = await fetch("/api/auth/status").then(x=>x.json()).catch(()=>null);
+  if (!r) return;
+  setLockIcon(!!r.totp_enabled);
+  if (r.totp_enabled) openDisable();
+  else startEnroll();
+}
+
+// ── Ativar: gera segredo, mostra QR + chave, confirma com código ──
+async function startEnroll() {
+  const { ok, data } = await secPost("/api/auth/2fa/setup", {});
+  if (!ok) { alert(data.detail || "Erro ao iniciar o 2FA."); return; }
+  _secReset();
+  document.getElementById("sec-title").textContent = "🔓 Ativar 2FA";
+  document.getElementById("sec-desc").textContent  = "Adiciona a conta no Google Authenticator e confirma com o código gerado.";
+  document.getElementById("sec-qr").innerHTML      = data.qr_svg;
+  document.getElementById("sec-key").textContent   = data.secret;
+  document.getElementById("sec-enroll").style.display = "";
+  document.getElementById("sec-overlay").classList.add("visible");
+  document.getElementById("sec-code").focus();
+}
+async function confirmEnroll() {
+  const code = document.getElementById("sec-code").value.trim();
+  const { ok, data } = await secPost("/api/auth/2fa/enable", { code });
+  if (!ok) { secMsg(data.detail || "Código inválido.", true); return; }
+  document.getElementById("sec-enroll").style.display = "none";
+  document.getElementById("sec-recovery-list").textContent = data.recovery_codes.join("\n");
+  document.getElementById("sec-recovery").style.display = "";
+  setLockIcon(true);   // cadeado fecha
+  secMsg("", false);
+}
+
+// ── Desativar: só o código do autenticador ──
+function openDisable() {
+  _secReset();
+  document.getElementById("sec-title").textContent = "🔒 Desativar 2FA";
+  document.getElementById("sec-desc").textContent  = "Introduz um código do autenticador (ou de recuperação) para confirmar.";
+  document.getElementById("sec-disable").style.display = "";
+  document.getElementById("sec-overlay").classList.add("visible");
+  document.getElementById("sec-dis-code").focus();
+}
+async function confirmDisable() {
+  const code = document.getElementById("sec-dis-code").value.trim();
+  const { ok, data } = await secPost("/api/auth/2fa/disable", { code });
+  if (!ok) { secMsg(data.detail || "Código inválido.", true); return; }
+  setLockIcon(false);   // cadeado abre
+  closeSecurity();
+}
+
+let _credentialsChecked = false;
+
+async function fetchStatus() {
+  try {
+    const d = await api("/api/status");
+    setBotStatus(d.running);
+    applyConfig(d.config);
+    applyStats(d.stats);
+    applyBalance(d.balance);
+    renderPositions(d.positions);
+
+    // Verifica credenciais apenas na primeira carga — não a cada 60s
+    if (!_credentialsChecked) {
+      _credentialsChecked = true;
+      await checkCredentialsForMode(currentMode);
+    }
+  } catch(e) { log(`Erro status: ${e.message}`, "error"); }
+}
+
+async function checkCredentialsForMode(mode) {
+  try {
+    const res = await api(`/api/credentials/${mode}`, "GET");
+    if (!res.configured) {
+      _pendingMode = mode;
+      document.getElementById("creds-title").textContent =
+        mode === "live" ? "Configurar API Live" : "Configurar API Demo";
+      document.getElementById("creds-apikey").value = "";
+      document.getElementById("creds-secret").value = "";
+      document.getElementById("creds-overlay").classList.add("visible");
+    }
+  } catch(e) { /* falha silenciosa — não bloqueia o dashboard */ }
+}
+
+async function fetchTrades() {
+  try {
+    const d = await api("/api/trades?limit=50");
+    _tradesCache = d.trades || [];
+    renderTrades(_tradesCache);
+    setTradeMarkers(_tradesCache);
+  } catch(e) { log(`Erro trades: ${e.message}`, "error"); }
+}
+
+/* ─────────────────────────────────────────────
+   GRÁFICO — lightweight-charts
+───────────────────────────────────────────── */
+
+// TF da estratégia por defeito (pode ser alterado pelo utilizador)
+const STRATEGY_TF = {
+  auto: "1h", auto_v2: "1h",
+  bear_v13: "1h", bear_v12: "1h", breakout_short: "1h",
+  lateral_breakout: "1h", bull_smc: "1h",
+  wyckoff: "15m", smc_swing: "4h",
+};
+
+function initChart() {
+  const container = document.getElementById("tv_chart");
+  container.innerHTML = "";
+
+  chart = LightweightCharts.createChart(container, {
+    autoSize: true,
+    layout: {
+      background: { type: "solid", color: "#080808" },
+      textColor:  "#555555",
+      fontSize:   11,
+      fontFamily: "'Space Mono', monospace",
+    },
+    grid: {
+      vertLines: { color: "rgba(247,147,26,0.05)" },
+      horzLines: { color: "rgba(247,147,26,0.05)" },
+    },
+    crosshair: {
+      mode:     LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: "#F7931A", labelBackgroundColor: "#F7931A" },
+      horzLine: { color: "#F7931A", labelBackgroundColor: "#F7931A" },
+    },
+    rightPriceScale: { borderColor: "#1e1e1e" },
+    timeScale: {
+      borderColor:   "#1e1e1e",
+      timeVisible:   true,
+      secondsVisible: false,
+      fixLeftEdge:   true,
+    },
+  });
+
+  candleSeries = chart.addCandlestickSeries({
+    upColor:         "#00C9A7",
+    downColor:       "#FF4F5E",
+    borderUpColor:   "#00C9A7",
+    borderDownColor: "#FF4F5E",
+    wickUpColor:     "#00C9A7",
+    wickDownColor:   "#FF4F5E",
+  });
+
+  volumeSeries = chart.addHistogramSeries({
+    priceFormat:  { type: "volume" },
+    priceScaleId: "vol",
+  });
+  chart.priceScale("vol").applyOptions({
+    scaleMargins: { top: 0.82, bottom: 0 },
+  });
+
+  ema20Series = chart.addLineSeries({
+    color: "#F7931A", lineWidth: 1,
+    priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+  });
+  ema50Series = chart.addLineSeries({
+    color: "#5B8AF5", lineWidth: 1,
+    priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+  });
+  ema200Series = chart.addLineSeries({
+    color: "#9C27B0", lineWidth: 1,
+    priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+  });
+
+  // Ativa o arraste das linhas de SL/TP sobre o canvas
+  enableLineDragging(container);
+}
+
+async function loadChart(symbol, tf) {
+  if (!chart) initChart();
+  if (_chartLoading) return;
+  _chartLoading = true;
+
+  try {
+    const params = new URLSearchParams({ symbol, timeframe: tf, limit: 300 });
+    const data   = await api(`/api/candles?${params}`);
+    const c      = data.candles;
+    const toSec  = iso => Math.floor(new Date(iso).getTime() / 1000);
+
+    candleSeries.setData(c.map(x => ({
+      time: toSec(x.t), open: x.o, high: x.h, low: x.l, close: x.c,
+    })));
+
+    volumeSeries.setData(c.map(x => ({
+      time:  toSec(x.t),
+      value: x.v,
+      color: x.c >= x.o ? "rgba(0,201,167,0.35)" : "rgba(255,79,94,0.35)",
+    })));
+
+    const series = k => c.filter(x => x[k] != null).map(x => ({ time: toSec(x.t), value: x[k] }));
+    ema20Series.setData(series("ema20"));
+    ema50Series.setData(series("ema50"));
+    ema200Series.setData(series("ema200"));
+
+    // Reativa o auto-ajuste VERTICAL. Se o utilizador arrastou o eixo de preços
+    // (o que desliga o autoScale), ao trocar de moeda/timeframe a escala ficava
+    // travada no range antigo (ex: 63k do BTC ao abrir o ETH a 1800). Forçar
+    // autoScale re-enquadra automaticamente no preço da nova moeda.
+    chart.priceScale("right").applyOptions({ autoScale: true });
+
+    const last = c[c.length - 1];
+    if (last) document.getElementById("chart-price").textContent = last.c.toFixed(4);
+
+    updatePositionLines();
+    setTradeMarkers(_tradesCache);
+  } catch(e) {
+    log(`Erro gráfico: ${e.message}`, "error");
+  } finally {
+    _chartLoading = false;
+  }
+}
+
+function updatePositionLines(positions) {
+  if (positions !== undefined) _lastPositions = positions || [];
+
+  // Não redesenha enquanto o utilizador arrasta uma linha (evita perder a
+  // referência a meio do gesto). O tick seguinte redesenha no valor confirmado.
+  if (_drag) return;
+
+  // Remove linhas anteriores
+  for (const line of positionLines) {
+    try { candleSeries.removePriceLine(line); } catch(_) {}
+  }
+  positionLines = [];
+  _slLine = _tpLine = null;
+  _chartPos = null;
+
+  if (!candleSeries) return;
+
+  const pos = _lastPositions.find(p => p.symbol === currentSymbol);
+  if (!pos) return;
+  _chartPos = pos;
+
+  const addLine = (price, color, title, dashed) => {
+    if (price == null) return null;
+    const line = candleSeries.createPriceLine({
+      price,
+      color,
+      lineWidth:        1,
+      lineStyle:        dashed ? 2 : 0,  // 2=Dashed 0=Solid
+      axisLabelVisible: true,
+      title,
+    });
+    positionLines.push(line);
+    return line;
+  };
+
+  addLine(pos.entry,       "#F7931A", `▶ ${pos.side.toUpperCase()}`, false);
+  // Ponto zero REAL: a partir daqui o trade dá lucro. Fechar na linha da entrada
+  // ainda é prejuízo, porque a taxa de abrir+fechar já foi paga. Vem calculada do
+  // backend (position_manager.RT) para não haver dois sítios com a mesma taxa.
+  addLine(pos.breakeven,   "#8B92A8", "0 real", true);
+  _slLine = addLine(pos.stop_loss,   "#FF4F5E", "SL",  true);
+  _tpLine = addLine(pos.take_profit, "#00C9A7", "TP",  true);
+}
+
+// Formata preço com precisão adequada à magnitude (BTC 63000.00 vs DOGE 0.07153)
+function fmtPrice(p) {
+  if (p == null || isNaN(p)) return "—";
+  const abs = Math.abs(p);
+  const dec = abs >= 100 ? 2 : abs >= 1 ? 4 : 6;
+  return p.toFixed(dec);
+}
+
+// Habilita arrastar as linhas de SL/TP sobre o canvas do gráfico.
+// O lightweight-charts não tem drag nativo: detectamos o clique perto da linha,
+// seguimos o rato convertendo pixel→preço, e ao soltar confirmamos + aplicamos.
+function enableLineDragging(container) {
+  // Evita rebind se o initChart correr mais de uma vez
+  if (container.dataset.dragBound) return;
+  container.dataset.dragBound = "1";
+
+  const TOL = 6;  // tolerância em pixels para "agarrar" a linha
+
+  // Qual linha está sob o cursor (retorna 'sl' | 'tp' | null)
+  const lineHit = (mouseY) => {
+    if (!_chartPos || !candleSeries) return null;
+    const slY = _chartPos.stop_loss   != null ? candleSeries.priceToCoordinate(_chartPos.stop_loss)   : null;
+    const tpY = _chartPos.take_profit != null ? candleSeries.priceToCoordinate(_chartPos.take_profit) : null;
+    if (slY != null && Math.abs(mouseY - slY) <= TOL) return "sl";
+    if (tpY != null && Math.abs(mouseY - tpY) <= TOL) return "tp";
+    return null;
+  };
+
+  // Início do arraste
+  container.addEventListener("mousedown", (e) => {
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    // Ignora a zona do eixo de preços à direita (para não roubar o scale-drag)
+    if (x > rect.width - 56) return;
+    const kind = lineHit(y);
+    if (!kind) return;
+    const line = kind === "sl" ? _slLine : _tpLine;
+    if (!line) return;
+    _drag = { kind, line, price: kind === "sl" ? _chartPos.stop_loss : _chartPos.take_profit };
+    // Congela pan/zoom do gráfico durante o arraste
+    chart.applyOptions({ handleScroll: false, handleScale: false });
+    container.style.cursor = "ns-resize";
+    e.preventDefault();
+  });
+
+  // Hover: mostra que a linha é agarrável
+  container.addEventListener("mousemove", (e) => {
+    if (_drag) return;
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    container.style.cursor = (x <= rect.width - 56 && lineHit(y)) ? "ns-resize" : "";
+  });
+
+  // Movimento do arraste (na window, para funcionar mesmo saindo do container)
+  window.addEventListener("mousemove", (e) => {
+    if (!_drag) return;
+    const rect = container.getBoundingClientRect();
+    const price = candleSeries.coordinateToPrice(e.clientY - rect.top);
+    if (price == null || price <= 0) return;
+    _drag.price = price;
+    _drag.line.applyOptions({ price, title: `${_drag.kind.toUpperCase()} ${fmtPrice(price)}` });
+  });
+
+  // Soltar: confirma e aplica na Binance
+  window.addEventListener("mouseup", async () => {
+    if (!_drag) return;
+    const d = _drag;
+    _drag = null;
+    chart.applyOptions({ handleScroll: true, handleScale: true });
+    container.style.cursor = "";
+    if (!_chartPos) return;
+
+    const label    = d.kind === "sl" ? "Stop Loss" : "Take Profit";
+    const oldPrice = d.kind === "sl" ? _chartPos.stop_loss : _chartPos.take_profit;
+    const short    = _chartPos.symbol.replace("/USDC:USDC", "");
+    const ok = confirm(`Mover ${label} de ${short}\n\nDe:   ${fmtPrice(oldPrice)}\nPara: ${fmtPrice(d.price)}\n\nAplicar na Binance?`);
+    if (!ok) { updatePositionLines(); return; }  // reverte visual
+
+    try {
+      await api("/api/position/update-level", "POST", {
+        symbol: _chartPos.symbol, side: _chartPos.side, kind: d.kind, price: d.price,
+      });
+      log(`🎯 ${short} — ${label} → ${fmtPrice(d.price)}`, "ok");
+      // O backend faz broadcast de positions_tick → linhas redesenham no valor confirmado
+    } catch (err) {
+      log(`Erro ao mover ${label}: ${err.message}`, "error");
+      updatePositionLines();  // reverte para o valor real
+    }
+  });
+}
+
+/* ─────────────────────────────────────────────
+   MARCADORES DE TRADES NO GRÁFICO
+───────────────────────────────────────────── */
+
+function alignToCandle(isoTimestamp, tf) {
+  if (!isoTimestamp) return null;
+  const ms = new Date(isoTimestamp).getTime();
+  const tfMs = { '5m': 300000, '15m': 900000, '1h': 3600000, '4h': 14400000, '1d': 86400000 };
+  const interval = tfMs[tf] || 3600000;
+  return Math.floor(ms / interval) * interval / 1000;
+}
+
+function setTradeMarkers(trades) {
+  if (!candleSeries) return;
+  if (!trades || !trades.length) { candleSeries.setMarkers([]); return; }
+
+  const markers = [];
+  for (const t of trades) {
+    if (t.symbol !== currentSymbol) continue;
+
+    const isLong    = (t.side || '').toUpperCase() === 'LONG';
+    const entryTime = alignToCandle(t.timestamp, currentTf);
+
+    if (entryTime) {
+      // Entrada: verde ▲ para compra (long), vermelho ▼ para venda (short)
+      markers.push({
+        time:     entryTime,
+        position: isLong ? 'belowBar' : 'aboveBar',
+        color:    isLong ? '#00C9A7'  : '#FF4F5E',
+        shape:    isLong ? 'arrowUp'  : 'arrowDown',
+        text:     '',
+        size:     1,
+      });
+    }
+
+    if (t.status === 'closed' && t.closed_at) {
+      const exitTime = alignToCandle(t.closed_at, currentTf);
+      if (exitTime) {
+        // Saída: lado oposto da entrada
+        markers.push({
+          time:     exitTime,
+          position: isLong ? 'aboveBar' : 'belowBar',
+          color:    isLong ? '#FF4F5E'  : '#00C9A7',
+          shape:    isLong ? 'arrowDown': 'arrowUp',
+          text:     '',
+          size:     1,
+        });
+      }
+    }
+  }
+
+  markers.sort((a, b) => a.time - b.time);
+  candleSeries.setMarkers(markers);
+}
+
+/* ─────────────────────────────────────────────
+   RENDER
+───────────────────────────────────────────── */
+function setBotStatus(running) {
+  const pill  = document.getElementById("bot-status-pill");
+  const label = document.getElementById("bot-status-label");
+  const btn   = document.getElementById("bot-btn");
+
+  if (running) {
+    pill.className  = "status-pill pill-running";
+    label.textContent = "ATIVO";
+    btn.textContent   = "⏹  Parar Bot";
+    btn.className     = "btn btn-stop";
+    btn.onclick       = () => botCommand("stop");
+  } else {
+    pill.className  = "status-pill pill-stopped";
+    label.textContent = "PARADO";
+    btn.textContent   = "▶  Iniciar Bot";
+    btn.className     = "btn btn-start";
+    btn.onclick       = () => botCommand("start");
+  }
+}
+
+function applyConfig(cfg) {
+  if (!cfg) return;
+  currentMode     = cfg.mode || "testnet";
+  syncStrategyUI(cfg.strategy || currentStrategy || "auto_v2");
+  document.getElementById("leverage-slider").value = cfg.leverage || 3;
+  document.getElementById("lev-num").textContent   = cfg.leverage || 3;
+  applyMode(currentMode);
+}
+
+function applyMode(mode) {
+  currentMode = mode;
+  const badge   = document.getElementById("mode-badge");
+  const sub     = document.getElementById("mode-sub");
+  const warning = document.getElementById("live-warning");
+
+  const labels = { testnet: "DEMO", live: "LIVE" };
+  const subs = {
+    testnet: "Demo ativo — ordens na conta demo Binance",
+    live:    "Live ativo — ordens reais, dinheiro REAL",
+  };
+
+  badge.textContent = labels[mode] || mode.toUpperCase();
+  badge.className   = "mode-badge " + mode;
+  document.getElementById("live-toggle").checked = mode === "live";
+  document.getElementById("mode-label").textContent = mode === "live" ? "Modo Live" : "Modo Demo";
+  sub.textContent   = subs[mode] || "";
+  warning.classList.toggle("visible", mode === "live");
+}
+
+function applyBalance(balance) {
+  const el = document.getElementById("hstat-balance");
+  if (!balance || balance.total == null) { el.textContent = "— USDC"; return; }
+  el.textContent = balance.total.toLocaleString("en-US", {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  }) + " USDC";
+}
+
+function applyStats(stats) {
+  if (!stats) return;
+  const pnl = stats.total_pnl || 0;
+  const el  = document.getElementById("hstat-pnl");
+  el.textContent = (pnl >= 0 ? "+" : "") + pnl.toFixed(2) + " USDC";
+  el.className   = "hstat-value " + (pnl >= 0 ? "pos" : "neg");
+  document.getElementById("hstat-wr").textContent =
+    stats.total_trades > 0 ? stats.win_rate + "%" : "—";
+  document.getElementById("hstat-trades").textContent = stats.total_trades || 0;
+}
+
+function renderMiniConditions(data) {
+  const conds  = data.conditions || [];
+  const passed = conds.filter(c => c.passed).length;
+  const total  = conds.length;
+  const pct    = total > 0 ? (passed / total) * 100 : 0;
+  const ready  = data.signal !== "NONE";
+  const sym    = (data.symbol || currentSymbol).replace("/USDC:USDC","");
+
+  document.getElementById("mini-cond-title").textContent = `CONDIÇÕES — ${sym}`;
+
+  const scoreEl = document.getElementById("mini-cond-score");
+  scoreEl.textContent = total > 0 ? `${passed}/${total}` : "—";
+  scoreEl.className = "mini-cond-score" + (ready ? " score-ready" : "");
+
+  const bar = document.getElementById("mini-cond-bar");
+  bar.style.width = pct + "%";
+  bar.className = "mini-cond-bar" + (ready ? " bar-ready" : "");
+
+  const list = document.getElementById("mini-cond-list");
+  if (!conds.length) {
+    list.innerHTML = `<li class="mini-cond-empty">Aguardando scan...</li>`;
+    return;
+  }
+  list.innerHTML = conds.map(c => `
+    <li class="mini-cond-item ${c.passed ? 'passed' : ''}">
+      <span class="mini-cond-dot"></span>
+      <span>${c.name}</span>
+    </li>
+  `).join("");
+}
+
+function renderConditions(data) {
+  const signal = data.signal || "NONE";
+  const banner = document.getElementById("signal-banner");
+  const sigVal = document.getElementById("signal-val");
+  const rrVal  = document.getElementById("rr-val");
+  const count  = document.getElementById("cond-count");
+  const list   = document.getElementById("cond-list");
+
+  banner.className = "signal-banner " + signal.toLowerCase();
+  sigVal.textContent = signal;
+  rrVal.textContent  = data.rr ? data.rr + ":1" : "—";
+
+  const conds = data.conditions || [];
+  const passed = conds.filter(c=>c.passed).length;
+  count.textContent = `${passed}/${conds.length}`;
+
+  if (!conds.length) {
+    list.innerHTML = `<div style="padding:12px 0;color:var(--muted);font-size:11px;text-align:center">Sem dados</div>`;
+    return;
+  }
+
+  list.innerHTML = conds.map(c => `
+    <div class="cond-row">
+      <div class="cond-dot ${c.passed?'pass':'fail'}"></div>
+      <div class="cond-text-wrap">
+        <div class="cond-name">${c.name}</div>
+        <div class="cond-detail">${c.detail||""}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderPositions(positions) {
+  const wrap = document.getElementById("positions-wrap");
+  document.getElementById("hstat-positions").textContent = (positions||[]).length;
+  updatePositionLines(positions);
+
+  if (!positions || !positions.length) {
+    wrap.innerHTML = `<div class="pos-empty">Nenhuma posição aberta</div>`;
+    return;
+  }
+
+  wrap.innerHTML = positions.map(p => {
+    const side    = p.side;
+    const prog    = Math.min(100, Math.max(0, p.progress_pct||0));
+    const pnlSign = p.pnl_pct >= 0 ? "+" : "";
+    const pnlCol  = p.pnl_pct >= 0 ? "var(--green)" : "var(--red)";
+    const margin  = p.margin_usdt ? p.margin_usdt.toFixed(2) : "—";
+    const riskU   = p.risk_usdt  ? p.risk_usdt.toFixed(2)   : "—";
+    // Posição readotada sem ordem de stop viva na Binance (ver reconcile no boot)
+    const noStop  = p.has_live_stop === false;
+
+    return `
+    <div class="pos-card ${side} ${noStop ? "no-stop" : ""}">
+      <div class="pos-header">
+        <span class="pos-sym">${p.symbol.replace("/USDC:USDC","")}/USDC</span>
+        <span class="pos-side ${side}">${side.toUpperCase()} ${p.leverage}×</span>
+      </div>
+      ${noStop ? `<div class="pos-nostop-warn">⚠ Sem stop na Binance — só monitorada. Feche pelo botão abaixo se quiser.</div>` : ""}
+      <div class="pos-grid">
+        <div>
+          <div class="pos-metric-label">Entrada</div>
+          <div class="pos-metric-value">${p.entry?.toFixed(4)}</div>
+        </div>
+        <div>
+          <div class="pos-metric-label">Stop</div>
+          <div class="pos-metric-value" style="color:var(--red)">${p.stop_loss?.toFixed(4)}</div>
+        </div>
+        <div>
+          <div class="pos-metric-label">Target</div>
+          <div class="pos-metric-value" style="color:var(--green)">${p.take_profit?.toFixed(4)}</div>
+        </div>
+        <div>
+          <div class="pos-metric-label">P&L</div>
+          <div class="pos-metric-value" style="color:${pnlCol}">${pnlSign}${p.pnl_pct?.toFixed(1)}%</div>
+        </div>
+      </div>
+      <div class="pos-capital">
+        <div>
+          <div class="pos-metric-label">Margem usada</div>
+          <div class="pos-metric-value">${margin} USDC</div>
+        </div>
+        <div>
+          <div class="pos-metric-label">Risco máx</div>
+          <div class="pos-metric-value" style="color:var(--red)">$${riskU}</div>
+        </div>
+      </div>
+      <div class="pos-progress-wrap">
+        <div class="pos-metric-label">${prog.toFixed(0)}% do alvo</div>
+        <div class="pos-progress-bar">
+          <div class="pos-progress-fill" style="width:${prog}%;background:${prog>=100?'var(--green)':'var(--orange)'}"></div>
+        </div>
+      </div>
+      <div class="pos-tags">
+        ${p.breakeven_hit ? '<span class="pos-tag tag-be">🔒 Breakeven</span>' : ""}
+        ${p.partial_closed ? '<span class="pos-tag tag-part">Parcial fechada</span>' : ""}
+      </div>
+      <div class="pos-partial-row">
+        <span class="pos-partial-label">Fechar parcial</span>
+        <div class="pos-partial-btns">
+          <button class="pos-partial-btn" onclick="closePartial('${p.symbol}','${p.side}',0.25)">25%</button>
+          <button class="pos-partial-btn" onclick="closePartial('${p.symbol}','${p.side}',0.5)">50%</button>
+          <button class="pos-partial-btn" onclick="closePartial('${p.symbol}','${p.side}',0.75)">75%</button>
+        </div>
+      </div>
+      <button class="pos-close-btn" onclick="closePosition('${p.symbol}','${p.side}')">
+        Fechar posição (100%)
+      </button>
+    </div>`;
+  }).join("");
+}
+
+async function closePosition(symbol, side) {
+  const short = symbol.replace("/USDC:USDC", "");
+  const ok = confirm(`Fechar ${short} (${side.toUpperCase()}) a mercado?\n\nIsso cancela o SL/TP e fecha a posição imediatamente.`);
+  if (!ok) return;
+  try {
+    await api("/api/position/close", "POST", { symbol, side });
+    log(`⛔ ${short} fechado manualmente`, "warn");
+    fetchStatus();
+    fetchTrades();
+  } catch(e) {
+    log(`Erro ao fechar ${short}: ${e.message}`, "error");
+  }
+}
+
+// Fecha uma fração do que RESTA aberto (25/50/75%). O restante segue com SL/TP.
+async function closePartial(symbol, side, fraction) {
+  const short = symbol.replace("/USDC:USDC", "");
+  const pct   = Math.round(fraction * 100);
+  const ok = confirm(`Fechar ${pct}% de ${short} (${side.toUpperCase()}) a mercado?\n\nFecha ${pct}% do que está aberto agora. O resto continua com stop/target.`);
+  if (!ok) return;
+  try {
+    const r = await api("/api/position/close-partial", "POST", { symbol, side, fraction });
+    const pnl = (r && typeof r.pnl_usdt === "number") ? ` (${r.pnl_usdt >= 0 ? "+" : ""}${r.pnl_usdt.toFixed(2)} USDC)` : "";
+    playTradeSound("close");
+    log(`✂ ${short} — ${pct}% fechado${pnl}`, "ok");
+    fetchStatus();
+    fetchTrades();
+  } catch(e) {
+    log(`Erro ao fechar parcial de ${short}: ${e.message}`, "error");
+  }
+}
+
+function renderTrades(trades) {
+  const tbody = document.getElementById("trades-body");
+  if (!trades || !trades.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:14px">Sem trades</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = trades.map(t => {
+    const pnl     = t.pnl_usdt;
+    const cls     = pnl == null ? "td-open" : pnl >= 0 ? "td-win" : "td-loss";
+    const pnlTxt  = pnl == null ? "aberto" : (pnl >= 0?"+":"") + pnl.toFixed(2);
+    const sideCls = (t.side||"").toLowerCase() === "long" ? "side-long" : "side-short";
+    const sym     = (t.symbol||"").replace("/USDC:USDC","");
+    // Linha de fecho parcial: marca com badge do % fechado
+    const partTag = t.partial_pct
+      ? ` <span class="td-partial">${(+t.partial_pct).toFixed(0)}%</span>` : "";
+    return `<tr>
+      <td class="td-id">${t.id ?? "—"}</td>
+      <td>${sym}${partTag}</td>
+      <td class="${sideCls}">${t.side}</td>
+      <td>${t.leverage||"—"}×</td>
+      <td>${t.rr?.toFixed(1)||"—"}</td>
+      <td class="${cls}">${pnlTxt}</td>
+    </tr>`;
+  }).join("");
+}
+
+
+/* ─────────────────────────────────────────────
+   ACTIONS
+───────────────────────────────────────────── */
+async function botCommand(action) {
+  try {
+    await api("/api/bot","POST",{action,strategy:currentStrategy});
+  } catch(e) { log(`Erro: ${e.message}`,"error"); }
+}
+
+/* ── Scan Manual com contador de progresso ── */
+let _scanActive      = false;
+let _scanCount       = 0;   // incrementado a cada signal_update (pode ser rápido)
+let _scanTimeout     = null;
+let _scanRenderTimer = null; // render independente a 80ms — o browser pinta cada tick
+const SCAN_TOTAL = SYMBOLS.length;
+
+async function startScan() {
+  if (_scanActive) return;
+  _scanActive = true;
+  _scanCount  = 0;
+
+  const btn = document.getElementById("scan-btn");
+  btn.disabled = true;
+  btn.classList.add("scanning");
+  btn.innerHTML = `🔍&nbsp; 0 / ${SCAN_TOTAL}`;
+
+  // Render timer: actualiza o DOM a cada 80ms independentemente de quantas
+  // mensagens WS chegaram — garante que o browser pinta os valores intermédios
+  _scanRenderTimer = setInterval(() => {
+    const b = document.getElementById("scan-btn");
+    if (b && _scanActive) b.innerHTML = `🔍&nbsp; ${_scanCount} / ${SCAN_TOTAL}`;
+  }, 80);
+
+  log("🔎 Scan manual iniciado...", "info");
+
+  try {
+    await api("/api/bot", "POST", { action: "scan", strategy: currentStrategy });
+  } catch(e) {
+    log(`Erro scan: ${e.message}`, "error");
+    resetScanBtn();
+    return;
+  }
+
+  // Segurança: re-habilita após 90s mesmo que o WS não responda
+  _scanTimeout = setTimeout(resetScanBtn, 90000);
+}
+
+function onScanSignal() {
+  if (!_scanActive) return;
+  _scanCount++;
+
+  if (_scanCount >= SCAN_TOTAL) {
+    clearTimeout(_scanTimeout);
+    clearInterval(_scanRenderTimer);
+    const btn = document.getElementById("scan-btn");
+    if (btn) btn.innerHTML = `🔍&nbsp; ${SCAN_TOTAL} / ${SCAN_TOTAL}`;
+    setTimeout(() => {
+      resetScanBtn();
+      log("✔ Scan concluído", "ok");
+    }, 700);
+  }
+}
+
+function resetScanBtn() {
+  _scanActive = false;
+  clearInterval(_scanRenderTimer);
+  clearTimeout(_scanTimeout);
+  const btn = document.getElementById("scan-btn");
+  if (!btn) return;
+  btn.disabled = false;
+  btn.classList.remove("scanning");
+  btn.innerHTML = `🔍&nbsp; Scan Manual`;
+}
+
+async function scanNow() {
+  const btn = document.getElementById("scan-btn");
+  btn.classList.add("scanning");
+  btn.innerHTML = "⏳&nbsp;Scanning...";
+  btn.disabled = true;
+  log("🔎 Scan diagnóstico iniciado — a analisar todos os pares...", "info");
+  try {
+    await api("/api/bot","POST",{action:"scan"});
+  } catch(e) {
+    log(`Erro scan: ${e.message}`, "error");
+  } finally {
+    setTimeout(() => {
+      btn.classList.remove("scanning");
+      btn.innerHTML = "🔎&nbsp; Scan Agora";
+      btn.disabled = false;
+    }, 4000);
+  }
+}
+
+let _pendingMode = null;
+
+async function handleModeToggle(isLive) {
+  const mode = isLive ? "live" : "testnet";
+
+  if (isLive) {
+    const ok = confirm("⚠ ATENÇÃO\n\nVocê vai ativar o modo LIVE.\n\nO bot usará DINHEIRO REAL na Binance.\n\nConfirma?");
+    if (!ok) {
+      document.getElementById("live-toggle").checked = false;
+      return;
+    }
+  }
+
+  // Verifica se as credenciais estão configuradas para este modo
+  try {
+    const res = await api(`/api/credentials/${mode}`, "GET");
+    if (!res.configured) {
+      _pendingMode = mode;
+      document.getElementById("creds-title").textContent =
+        mode === "live" ? "Configurar API Live" : "Configurar API Demo";
+      document.getElementById("creds-apikey").value = "";
+      document.getElementById("creds-secret").value = "";
+      document.getElementById("creds-overlay").classList.add("visible");
+      // Reverte o toggle enquanto o utilizador preenche o modal
+      document.getElementById("live-toggle").checked = !isLive;
+      return;
+    }
+  } catch(e) { /* Se a verificação falhar, continua sem bloquear */ }
+
+  try {
+    await api("/api/config", "POST", { mode });
+    applyMode(mode);
+  } catch(e) {
+    document.getElementById("live-toggle").checked = !isLive;
+    log(`Erro ao mudar modo: ${e.message}`, "error");
+  }
+}
+
+async function saveCredentials() {
+  const apiKey = document.getElementById("creds-apikey").value.trim();
+  const secret = document.getElementById("creds-secret").value.trim();
+  if (!apiKey || !secret) {
+    log("Preencha a API Key e o Secret.", "error");
+    return;
+  }
+  try {
+    await api(`/api/credentials/${_pendingMode}`, "POST", { api_key: apiKey, secret });
+    document.getElementById("creds-overlay").classList.remove("visible");
+    // Activa o modo depois de guardar
+    await api("/api/config", "POST", { mode: _pendingMode });
+    applyMode(_pendingMode);
+    log(`Credenciais guardadas. Modo ${_pendingMode === "live" ? "Live" : "Demo"} ativo.`, "ok");
+    _pendingMode = null;
+  } catch(e) {
+    log(`Erro ao guardar credenciais: ${e.message}`, "error");
+  }
+}
+
+function cancelCredentials() {
+  document.getElementById("creds-overlay").classList.remove("visible");
+  document.getElementById("live-toggle").checked = currentMode === "live";
+  _pendingMode = null;
+}
+
+async function setLeverage(val) {
+  try { await api("/api/config","POST",{leverage:parseInt(val)}); }
+  catch(e) { log(`Erro alavancagem: ${e.message}`,"error"); }
+}
+
+async function setStrategy(val) {
+  currentStrategy = val;
+  // Ao trocar estratégia, atualiza o TF padrão e o pill ativo
+  const defaultTf = STRATEGY_TF[val] || "1h";
+  currentTf = defaultTf;
+  document.querySelectorAll(".tf-pill").forEach(p => {
+    p.classList.toggle("active", p.dataset.tf === defaultTf);
+  });
+  try {
+    await api("/api/config","POST",{strategy:val});
+    await loadChart(currentSymbol, currentTf);
+  } catch(e) { log(`Erro estratégia: ${e.message}`,"error"); }
+}
+
+/* ─────────────────────────────────────────────
+   FEAR & GREED INDEX (mercado cripto, alternative.me)
+───────────────────────────────────────────── */
+const FNG_ZONES = [
+  { max: 24,  emoji: "😱", color: "var(--red)"    },  // Medo Extremo
+  { max: 44,  emoji: "😨", color: "var(--orange)" },  // Medo
+  { max: 55,  emoji: "😐", color: "var(--yellow)" },  // Neutro
+  { max: 75,  emoji: "🙂", color: "var(--green)"  },  // Ganância
+  { max: 100, emoji: "🤑", color: "var(--green)"  },  // Ganância Extrema
+];
+
+async function fetchFearGreed() {
+  const badge = document.getElementById("fng-badge");
+  const emojiEl = document.getElementById("fng-emoji");
+  const valueEl = document.getElementById("fng-value");
+  try {
+    const d = await api("/api/fng");
+    if (d.value == null) { badge.title = "Fear & Greed indisponível no momento"; return; }
+    const zone = FNG_ZONES.find(z => d.value <= z.max) || FNG_ZONES[FNG_ZONES.length - 1];
+    emojiEl.textContent = zone.emoji;
+    valueEl.textContent = d.value;
+    badge.style.color = zone.color;
+    badge.style.borderColor = zone.color;
+    badge.title = `Fear & Greed Index: ${d.value} — ${d.classification}`;
+  } catch(e) { /* silencioso — não é crítico para o funcionamento do bot */ }
+}
+
+/* ─────────────────────────────────────────────
+   DROPDOWN DE ESTRATÉGIAS (custom, com card no hover)
+───────────────────────────────────────────── */
+let _strategies = [];  // metadados vindos de /api/strategies
+
+const _DIR_LABEL = { bull: "Alta", bear: "Baixa", neutral: "Lateral", multi: "Multi" };
+function dirLabel(d) { return _DIR_LABEL[d] || d; }
+
+async function fetchStrategies() {
+  try {
+    const d = await api("/api/strategies");
+    _strategies = d.strategies || [];
+    buildStrategyDD();
+    syncStrategyUI(currentStrategy);
+  } catch(e) { log(`Erro ao carregar estratégias: ${e.message}`, "error"); }
+}
+
+function buildStrategyDD() {
+  const list = document.getElementById("strat-dd-list");
+  if (!list) return;
+  list.innerHTML = _strategies.map(s => `
+    <button type="button" class="strat-dd-item" data-value="${s.value}"
+            onmouseenter="renderStrategyCard('${s.value}')"
+            onfocus="renderStrategyCard('${s.value}')"
+            onclick="selectStrategyDD('${s.value}')">
+      <span class="strat-item-label">${s.label}</span>
+      <span class="strat-item-badge dir-${s.direction}">${dirLabel(s.direction)}</span>
+    </button>`).join("");
+}
+
+function renderStrategyCard(value) {
+  const card = document.getElementById("strat-dd-card");
+  const s = _strategies.find(x => x.value === value);
+  if (!card || !s) return;
+  const L  = s.live || {};
+  const wr = s.win_rate != null ? s.win_rate + "%" : "—";
+  const hl = (s.highlights || []).map(h => `<li>${h}</li>`).join("");
+  card.innerHTML = `
+    <div class="strat-card-head">
+      <span class="strat-card-title">${s.label}</span>
+      <span class="strat-item-badge dir-${s.direction}">${dirLabel(s.direction)}</span>
+    </div>
+    <div class="strat-card-tags">
+      <span class="strat-tag style-${s.style}">${s.style}</span>
+      <span class="strat-tag">${s.timeframe}</span>
+    </div>
+    <p class="strat-card-summary">${s.summary || ""}</p>
+    <div class="strat-card-metrics">
+      <div><span class="m-label">Taxa de acerto</span><span class="m-value">${wr}</span></div>
+      <div><span class="m-label">Risco / trade</span><span class="m-value">${L.risk_pct}% · $${L.risk_usdt}</span></div>
+      <div><span class="m-label">Máx. posições</span><span class="m-value">${L.max_positions}</span></div>
+      <div><span class="m-label">Exposição máx.</span><span class="m-value">${L.max_risk_pct}% · $${L.max_risk_usdt}</span></div>
+    </div>
+    <div class="strat-card-backtest">📊 ${s.backtest || "—"}</div>
+    ${hl ? `<ul class="strat-card-hl">${hl}</ul>` : ""}`;
+}
+
+function toggleStrategyDD(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById("strat-dd-menu");
+  if (!menu) return;
+  if (menu.hasAttribute("hidden")) {
+    positionStrategyDD();
+    menu.removeAttribute("hidden");
+    renderStrategyCard(currentStrategy);  // mostra a atual ao abrir
+  } else {
+    menu.setAttribute("hidden", "");
+  }
+}
+
+// Calcula top/left do menu (position:fixed) a partir do botão — necessário
+// porque a sidebar tem overflow-y:auto, que corta (clipa) qualquer filho
+// mais largo que ela caso o menu fosse position:absolute/relative a ela.
+function positionStrategyDD() {
+  const trigger = document.querySelector(".strat-dd-trigger");
+  const menu    = document.getElementById("strat-dd-menu");
+  if (!trigger || !menu) return;
+  const rect = trigger.getBoundingClientRect();
+  menu.style.top  = `${rect.bottom + 4}px`;
+  menu.style.left = `${rect.left}px`;
+}
+
+function closeStrategyDD() {
+  const menu = document.getElementById("strat-dd-menu");
+  if (menu) menu.setAttribute("hidden", "");
+}
+
+// O menu é position:fixed (ancorado ao viewport, não à sidebar) — se a sidebar
+// rolar ou a janela redimensionar enquanto ele está aberto, fecha em vez de
+// deixá-lo "flutuando" desalinhado do botão.
+document.getElementById("sidebar-left")?.addEventListener("scroll", closeStrategyDD);
+window.addEventListener("resize", closeStrategyDD);
+
+function selectStrategyDD(value) {
+  closeStrategyDD();
+  syncStrategyUI(value);
+  setStrategy(value);
+}
+
+// Sincroniza o rótulo do trigger + item ativo (sem chamar a API)
+function syncStrategyUI(value) {
+  if (!value) return;
+  currentStrategy = value;
+  const s   = _strategies.find(x => x.value === value);
+  const cur = document.getElementById("strat-dd-current");
+  if (cur) cur.textContent = s ? s.label : value;
+  document.querySelectorAll(".strat-dd-item").forEach(it =>
+    it.classList.toggle("active", it.dataset.value === value));
+}
+
+// Fecha o dropdown ao clicar fora (o menu é position:fixed, fora da árvore
+// visual da sidebar, mas continua filho do DOM de #strat-dd — dd.contains
+// ainda funciona para detectar cliques dentro do trigger ou do próprio menu)
+document.addEventListener("click", (e) => {
+  const dd = document.getElementById("strat-dd");
+  if (dd && !dd.contains(e.target)) closeStrategyDD();
+});
+
+function selectSymbol(sym, el) {
+  currentSymbol = sym;
+  document.querySelectorAll(".sym-pill").forEach(p => p.classList.remove("active"));
+  el.classList.add("active");
+  document.getElementById("chart-sym").textContent = sym.replace(":USDC","");
+  loadChart(sym, currentTf);
+  setTradeMarkers(_tradesCache);
+  if (conditionsCache[sym]) {
+    renderConditions(conditionsCache[sym]);
+    renderMiniConditions(conditionsCache[sym]);
+  } else {
+    document.getElementById("mini-cond-title").textContent = `CONDIÇÕES — ${sym.replace("/USDC:USDC","")}`;
+    document.getElementById("mini-cond-score").textContent = "—";
+    document.getElementById("mini-cond-bar").style.width = "0%";
+    document.getElementById("mini-cond-list").innerHTML = `<li class="mini-cond-empty">Aguardando próximo scan...</li>`;
+    document.getElementById("cond-list").innerHTML = `<div style="padding:12px 0;color:var(--muted);font-size:11px;text-align:center">Aguardando próximo scan...</div>`;
+    document.getElementById("cond-count").textContent = "—";
+  }
+}
+
+function setTf(tf, el) {
+  currentTf = tf;
+  document.querySelectorAll(".tf-pill").forEach(p => p.classList.remove("active"));
+  el.classList.add("active");
+  loadChart(currentSymbol, currentTf);
+}
+
+async function resetChartView() {
+  await loadChart(currentSymbol, currentTf);
+  if (chart) {
+    // Reenquadra os dois eixos: vertical (preço) reativando o autoScale e
+    // horizontal (tempo) com fitContent. Cobre o caso de a escala de preços
+    // ter ficado travada após arrastar o eixo lateral.
+    chart.priceScale("right").applyOptions({ autoScale: true });
+    chart.timeScale().fitContent();
+  }
+}
+
+/* ─────────────────────────────────────────────
+   LOG
+───────────────────────────────────────────── */
+function log(msg, level="info") {
+  const out  = document.getElementById("log-output");
+  const time = new Date().toLocaleTimeString("pt-BR");
+  const div  = document.createElement("div");
+  div.className  = "log-line log-" + level;
+  div.dataset.time = time;
+  div.textContent  = msg;
+  out.appendChild(div);
+  out.scrollTop    = out.scrollHeight;
+  logCount++;
+  document.getElementById("log-count").textContent = logCount + " eventos";
+  while (out.children.length > 120) out.removeChild(out.firstChild);
+}
+
+/* ─────────────────────────────────────────────
+   BOOT
+───────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", async () => {
+  connectWS();
+  initChart();
+  initLock();   // estado inicial do cadeado 2FA no header
+  await Promise.all([fetchStrategies(), fetchStatus(), fetchTrades(), fetchFearGreed(), loadChart(currentSymbol, currentTf)]);
+  setInterval(() => { fetchStatus(); fetchTrades(); }, 60000);
+  setInterval(fetchFearGreed, 30 * 60000);  // índice só atualiza 1x/dia — 30min é de sobra
+});
+
+function toggleSection(sectionId, chevronId) {
+  const section = document.getElementById(sectionId);
+  const chevron = document.getElementById(chevronId);
+  if (!section) return;
+  const collapsed = section.classList.toggle("section-collapsed");
+  if (chevron) chevron.classList.toggle("collapsed", collapsed);
+}
+</script>
+
+<!-- ══════════════════ MODAL CREDENCIAIS API ══════════════════ -->
+<div class="modal-overlay" id="creds-overlay">
+  <div class="modal-box">
+    <h3 class="modal-title" id="creds-title">Configurar API Demo</h3>
+    <p class="modal-desc">
+      As chaves são encriptadas com AES-256 e guardadas na base de dados.<br>
+      Nunca ficam expostas em ficheiros ou logs.
+    </p>
+    <div class="form-field">
+      <label>API Key</label>
+      <input type="text" id="creds-apikey" placeholder="Cole a sua API Key aqui"
+             autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="form-field">
+      <label>Secret Key</label>
+      <input type="password" id="creds-secret" placeholder="Cole o seu Secret aqui"
+             autocomplete="off" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-stop" onclick="cancelCredentials()">Cancelar</button>
+      <button class="btn btn-start" onclick="saveCredentials()">Guardar e Ativar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL SEGURANÇA ══════════════════ -->
+<div class="modal-overlay" id="sec-overlay">
+  <div class="modal-box" style="max-width:440px;">
+    <h3 class="modal-title" id="sec-title">🔐 Autenticação de 2 fatores</h3>
+    <p class="modal-desc" id="sec-desc" style="margin-bottom:18px;"></p>
+
+    <!-- ATIVAR: QR + chave + confirmar -->
+    <div id="sec-enroll" style="display:none;text-align:center;">
+      <div id="sec-qr" style="background:#fff;padding:12px;border-radius:10px;"></div>
+      <p class="modal-desc" style="margin:6px 0;">Escaneia no Google Authenticator, ou introduz esta chave manualmente:</p>
+      <code id="sec-key" style="font-family:var(--mono);font-size:13px;color:var(--orange);word-break:break-all;"></code>
+      <div class="form-field" style="margin-top:12px;">
+        <input type="text" id="sec-code" placeholder="Código de 6 dígitos" inputmode="numeric" maxlength="12" autocomplete="off" />
+      </div>
+      <button class="btn btn-start" style="width:100%;" onclick="confirmEnroll()">Confirmar e ativar</button>
+    </div>
+
+    <!-- RECOVERY (uma vez) -->
+    <div id="sec-recovery" style="display:none;margin-top:4px;">
+      <p class="modal-desc" style="color:var(--orange);">✅ 2FA ativado! Guarda estes códigos de recuperação num local seguro — não voltam a aparecer:</p>
+      <pre id="sec-recovery-list" style="font-family:var(--mono);font-size:13px;background:var(--bg3);padding:12px;border-radius:8px;white-space:pre-wrap;line-height:1.9;"></pre>
+    </div>
+
+    <!-- DESATIVAR: só o código -->
+    <div id="sec-disable" style="display:none;">
+      <div class="form-field">
+        <input type="text" id="sec-dis-code" placeholder="Código do autenticador (ou recuperação)"
+               inputmode="numeric" maxlength="12" autocomplete="off" />
+      </div>
+      <button class="btn btn-stop" style="width:100%;" onclick="confirmDisable()">Desativar 2FA</button>
+    </div>
+
+    <div id="sec-msg" style="margin-top:14px;font-size:12px;text-align:center;min-height:16px;"></div>
+
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn btn-stop" onclick="closeSecurity()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

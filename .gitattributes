@@ -1,0 +1,12 @@
+# Normaliza quebras de linha no repositório (LF), preservando o que cada
+# sistema usa localmente. Evita diffs ruidosos entre Windows e Linux/macOS.
+* text=auto eol=lf
+
+# O .bat precisa de CRLF para o cmd.exe do Windows o interpretar corretamente.
+*.bat text eol=crlf
+
+# Binários — nunca converter.
+*.png binary
+*.jpg binary
+*.ico binary
+*.db  binary

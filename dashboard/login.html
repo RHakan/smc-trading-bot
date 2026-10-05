@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Sem cache nesta página — nunca guardar credenciais introduzidas -->
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>₿ BotFutures — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:     #080808;
+      --bg2:    #0e0e0e;
+      --bg3:    #161616;
+      --border: #242424;
+      --text:   #f0f0f0;
+      --muted:  #555555;
+      --orange: #F7931A;
+      --red:    #FF4F5E;
+      --green:  #00C9A7;
+      --font:   'Space Grotesk', system-ui, sans-serif;
+      --mono:   'Space Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* mesmo grid decorativo do dashboard */
+      background-image:
+        linear-gradient(rgba(247,147,26,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(247,147,26,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .card {
+      width: 380px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 36px 32px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+    }
+
+    /* ── Logo ── */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--orange);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700;
+      color: #000; font-family: var(--mono);
+    }
+    .logo-text       { font-size: 17px; font-weight: 700; }
+    .logo-text span  { color: var(--orange); }
+
+    /* ── Cabeçalho ── */
+    .title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .sub   { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+    /* ── Campos ── */
+    .field           { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 11px; font-weight: 600;
+      color: var(--muted);
+      font-family: var(--mono);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: var(--orange); }
+
+    /* ── Botão ── */
+    .btn {
+      width: 100%; padding: 12px;
+      background: var(--orange);
+      color: #000;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font);
+      margin-top: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.2px;
+    }
+    .btn:hover          { opacity: 0.88; }
+    .btn:active         { transform: scale(0.98); }
+    .btn:disabled       { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* ── Mensagem de erro ── */
+    .error {
+      display: none;
+      margin-top: 16px;
+      padding: 11px 14px;
+      background: rgba(255,79,94,0.08);
+      border: 1px solid rgba(255,79,94,0.3);
+      border-radius: 7px;
+      font-size: 12px;
+      color: var(--red);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .error.visible { display: block; }
+
+    /* ── Aviso de ambiente ── */
+    .env-notice {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--mono);
+      text-align: center;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="logo">
+    <div class="logo-icon">₿</div>
+    <span class="logo-text">Bot<span>Futures</span></span>
+  </div>
+
+  <h1 class="title">Bem-vindo</h1>
+  <p class="sub">Acesso restrito — introduz as tuas credenciais</p>
+
+  <form id="form" onsubmit="handleLogin(event)" autocomplete="on" novalidate>
+    <div class="field">
+      <label for="username">Utilizador</label>
+      <input
+        type="text"
+        id="username"
+        name="username"
+        autocomplete="username"
+        spellcheck="false"
+        placeholder="admin"
+        required
+      />
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="current-password"
+        required
+      />
+    </div>
+
+    <!-- Campo 2FA — escondido até o servidor sinalizar que a conta tem 2FA -->
+    <div class="field" id="totpField" style="display:none;">
+      <label for="totp">Código de verificação (2FA)</label>
+      <input
+        type="text"
+        id="totp"
+        name="totp"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        placeholder="000000"
+        maxlength="12"
+        spellcheck="false"
+      />
+    </div>
+
+    <button type="submit" class="btn" id="btn">Entrar</button>
+  </form>
+
+  <div class="error" id="error"></div>
+
+  <p class="env-notice">
+    BotFutures &mdash; acesso pessoal e intransferível<br>
+    Todas as sessões expiram ao fim de 24h
+  </p>
+
+</div>
+
+<script>
+async function handleLogin(e) {
+  e.preventDefault();
+
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+  const totp     = document.getElementById("totp").value.trim();
+  const totpShown = document.getElementById("totpField").style.display !== "none";
+  const btn      = document.getElementById("btn");
+  const errEl    = document.getElementById("error");
+
+  if (!username || !password) {
+    showError("Preenche todos os campos.");
+    return;
+  }
+  if (totpShown && !totp) {
+    showError("Introduz o código de 6 dígitos do teu autenticador.");
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = "A verificar...";
+  errEl.classList.remove("visible");
+
+  try {
+    const payload = { username, password };
+    if (totp) payload.totp_code = totp;
+
+    const res = await fetch("/auth/login", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      window.location.replace("/");
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+
+    if (data.detail === "2FA_REQUIRED") {
+      // Senha correta — a conta tem 2FA. Revela o campo e pede o código.
+      document.getElementById("totpField").style.display = "";
+      document.getElementById("totp").focus();
+      showError("Introduz o código do teu autenticador para continuar.");
+    } else if (res.status === 429) {
+      showError(data.detail || "Demasiadas tentativas. Aguarda alguns minutos.");
+    } else if (totpShown) {
+      showError("Código de 2FA inválido. Verifica e tenta novamente.");
+      document.getElementById("totp").value = "";
+      document.getElementById("totp").focus();
+    } else {
+      showError("Credenciais inválidas. Verifica e tenta novamente.");
+      document.getElementById("password").value = "";
+      document.getElementById("password").focus();
+    }
+
+  } catch (_) {
+    showError("Erro de ligação ao servidor. O bot está a correr?");
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = "Entrar";
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById("error");
+  el.textContent = msg;
+  el.classList.add("visible");
+}
+
+// Foco automático no primeiro campo vazio
+document.addEventListener("DOMContentLoaded", () => {
+  const username = document.getElementById("username");
+  const password = document.getElementById("password");
+  if (!username.value) {
+    username.focus();
+  } else {
+    password.focus();
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SEGREDOS — nunca versionar
+# ─────────────────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BASE DE DADOS — contém histórico de trades, credenciais encriptadas da
+# exchange e o hash da senha do dashboard. Cada instalação gera a sua.
+# ─────────────────────────────────────────────────────────────────────────────
+data/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LOGS — registam nomes de utilizador e atividade da conta
+# ─────────────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CACHE DE BACKTESTS — ~195 MB de velas OHLCV públicas da Binance.
+# Os scripts descarregam-nas sozinhos no primeiro arranque.
+# ─────────────────────────────────────────────────────────────────────────────
+backtests/cache/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MATERIAIS DE REFERÊNCIA — material de terceiros, sem licença para redistribuir
+# ─────────────────────────────────────────────────────────────────────────────
+Materiais/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Editores e sistema operativo
+# ─────────────────────────────────────────────────────────────────────────────
+.claude/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

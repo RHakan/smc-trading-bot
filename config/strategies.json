@@ -1,0 +1,84 @@
+{
+  "smc_swing": {
+    "name": "SMC Swing — Trend Following v3",
+    "timeframe_entry": "4h",
+    "timeframe_bias": "1d",
+    "rr_minimo": 3.0,
+    "stop_atr_mult": 2.0,
+    "cooldown_bars": 48,
+    "enable_longs": false,
+    "enable_shorts": true,
+    "indicadores": {
+      "ema_bias": 200,
+      "ema_stack_fast": 20,
+      "ema_stack_slow": 50,
+      "ema_slope_lookback_daily": 10,
+      "ema_slope_lookback_4h": 6,
+      "rsi_period": 14,
+      "rsi_source": "ohlc4",
+      "rsi_short_min": 52,
+      "rsi_short_max": 78,
+      "rsi_long_min": 22,
+      "rsi_long_max": 48,
+      "bb_period": 20,
+      "bb_std": 2,
+      "bb_short_threshold": 0.60,
+      "bb_long_threshold": 0.40,
+      "mayer_short_min": 0.85,
+      "mayer_long_max": 0.98,
+      "fear_greed_short_min": 20,
+      "fear_greed_short_max": 85,
+      "fear_greed_long_min": 20,
+      "fear_greed_long_max": 60,
+      "atr_period": 14
+    }
+  },
+  "wyckoff": {
+    "name": "Wyckoff Daytrade — Spring / UTAD",
+    "timeframe_entry": "15m",
+    "timeframe_bias": "1d",
+    "rr_minimo": 2.5,
+    "stop_atr_mult": 1.0,
+    "cooldown_bars": 12,
+    "enable_longs": true,
+    "enable_shorts": true,
+    "indicadores": {
+      "ema_bias": 200,
+      "rsi_period": 14,
+      "rsi_source": "ohlc4",
+      "rsi_short_min": 63,
+      "rsi_long_max": 37,
+      "bb_period": 20,
+      "bb_std": 2,
+      "bb_short_threshold": 0.85,
+      "bb_long_threshold": 0.15,
+      "volume_sma_period": 20,
+      "volume_spike_mult": 1.2,
+      "swing_lookback": 10,
+      "swing_proximity_atr_mult": 1.5,
+      "atr_period": 14
+    }
+  },
+
+  "sniper": {
+    "name": "Sniper — Sweep & Reclaim (15m)",
+    "timeframe_entry": "15m",
+    "rr_minimo": 2.0,
+    "stop_atr_buffer": 0.25,
+    "cooldown_bars": 12,
+    "enable_longs": true,
+    "enable_shorts": true,
+    "use_bb_filter": true,
+    "use_volume_filter": true,
+    "indicadores": {
+      "swing_lookback": 10,
+      "bb_period": 20,
+      "bb_std": 2,
+      "bb_short_threshold": 0.85,
+      "bb_long_threshold": 0.15,
+      "volume_sma_period": 20,
+      "volume_spike_mult": 1.2,
+      "atr_period": 14
+    }
+  }
+}
