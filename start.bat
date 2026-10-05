@@ -50,8 +50,13 @@ echo.
 :: Abre o browser apos 2 segundos (em paralelo)
 start "" cmd /c "timeout /t 2 >nul && start http://localhost:8080"
 
-:: Inicia o servidor
-python -m uvicorn api.main:app --host 0.0.0.0 --port 8080
+:: Inicia o servidor.
+:: 127.0.0.1 = so aceita ligacoes DESTA maquina. E deliberado: o painel da acesso
+:: a ordens reais e as credenciais da exchange.
+:: Para abrir o painel noutro dispositivo da rede local, troque para 0.0.0.0 - mas
+:: leia primeiro a seccao "Expor na rede local" do README. Se o servir por HTTPS,
+:: defina tambem SECURE_COOKIES=true no .env.
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8080
 
 echo.
 echo  [INFO] Servidor encerrado.

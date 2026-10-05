@@ -1,4 +1,4 @@
-# bot-futures
+# smc-trading-bot
 
 > **EN —** Self-hosted crypto futures trading bot for Binance USD-M, with a regime-based
 > strategy engine, a local web dashboard and a backtesting suite. Testnet and backtest only.
@@ -70,8 +70,8 @@ ao atingir o alvo e invalidação de rompimentos falhados.
 ### 2. Instalação
 
 ```bash
-git clone <url-do-repositorio>
-cd bot-futures
+git clone https://github.com/RHakan/smc-trading-bot.git
+cd smc-trading-bot
 pip install -r requirements.txt
 ```
 
@@ -117,12 +117,39 @@ No mesmo `.env`:
 ### 6. Arranque
 
 ```bash
-python -m uvicorn api.main:app --host 0.0.0.0 --port 8080
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8080
 ```
 
 No Windows existe também o atalho `start.bat`, que valida o ambiente e abre o navegador.
 
 O painel fica em `http://localhost:8080`.
+
+> **Por omissão o painel só aceita ligações desta máquina** (`127.0.0.1`). É deliberado:
+> o painel dá acesso a ordens reais e às credenciais da exchange, por isso não deve estar
+> acessível a mais ninguém sem que seja uma decisão consciente.
+
+#### Expor na rede local (opcional)
+
+Se quiser abrir o painel noutro dispositivo da sua rede — o telemóvel, por exemplo —
+troque o endereço:
+
+```bash
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8080
+```
+
+Ou defina `API_HOST=0.0.0.0` no `.env`. O painel passa a responder no IP local da máquina
+(algo como `http://192.168.1.50:8080`).
+
+> ⚠️ **Antes de o fazer, perceba o que está a abrir.** Com `0.0.0.0` qualquer dispositivo
+> da rede chega ao painel, e com ele às suas ordens e à configuração do bot.
+>
+> - Em rede doméstica de confiança, e só com `TRADING_MODE=testnet`, o risco é limitado.
+> - **Nunca exponha o painel diretamente à internet.** Se precisar de acesso remoto, use
+>   uma VPN, ou ponha um proxy reverso com HTTPS (Caddy, nginx) à frente.
+> - Ao servir por HTTPS, defina também **`SECURE_COOKIES=true`** no `.env`. Sem isso o
+>   cookie de sessão viaja sem a marca `Secure` e pode ser enviado em ligações HTTP —
+>   o que permitiria a alguém na mesma rede capturá-lo e entrar na sua sessão.
+> - Ative o **2FA** (passo 8) antes de abrir o acesso a qualquer rede.
 
 ### 7. Ligar à exchange
 
@@ -177,8 +204,8 @@ No primeiro arranque descarregam as velas da Binance e guardam-nas em `backtests
 - **Sem autenticação multiutilizador.** Foi desenhado para uma única pessoa, na sua própria
   máquina ou rede local.
 - **Não exponha o painel à internet** sem colocar HTTPS à frente (proxy reverso) e definir
-  `SECURE_COOKIES=true`. Por omissão escuta em `0.0.0.0`, o que o torna acessível a toda a
-  rede local.
+  `SECURE_COOKIES=true`. Por omissão escuta apenas em `127.0.0.1`; abrir à rede ou à
+  internet é uma decisão consciente — ver [Expor na rede local](#expor-na-rede-local-opcional).
 - Em ambientes de simulação, **as ordens condicionais da exchange nem sempre executam**.
   O bot compensa fechando a mercado ao atingir o alvo, mas convém ter isto presente ao
   interpretar resultados de testnet.
